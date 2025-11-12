@@ -112,8 +112,10 @@ def coletar_cursos():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
-    service = Service("C:/chromedriver/chromedriver.exe")
+    from webdriver_manager.chrome import ChromeDriverManager
+    service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
+
     driver.get(url)
 
     # Rola até o fim da página para carregar todos os cursos
@@ -185,3 +187,4 @@ if st.button("🔍 Carregar Cursos", use_container_width=True):
                 """, unsafe_allow_html=True)
 else:
     st.info("👆 Clique em **'Carregar Cursos'** para iniciar a busca.")
+
