@@ -1,185 +1,187 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import re
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
 
-# --- CONFIGURAÇÕES E ESTILO ---
-st.set_page_config(
-    page_title="Seu Futuro Começa Aqui: Oportunidades Gratuitas",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# ==============================
+# CONFIGURAÇÃO GERAL DO APP
+# ==============================
+st.set_page_config(page_title="Escola Virtual - Fundação Bradesco", page_icon="🎓", layout="wide")
 
-# Caminho para o arquivo final gerado pelo NLP
-DATA_URL = 'cursos_classificados.csv'
-
-# Função para carregar e cachear os dados
-@st.cache_data
-def load_data():
-    """Carrega e prepara os dados classificados."""
-    try:
-        df = pd.read_csv(DATA_URL)
-        # Renomeia a coluna NLP para um nome mais intuitivo
-        df.rename(columns={'Categoria_NLP': 'Área de Foco'}, inplace=True)
-        df['Área de Foco'] = df['Área de Foco'].fillna('Outras Habilidades')
-        df['Duracao'] = df['Duracao'].fillna('N/A')
-        return df
-    except FileNotFoundError:
-        return pd.DataFrame()
-
-# Carregar os dados
-df = load_data()
-
-# ========================================================================
-# 1. ESTILO E PÁGINA INICIAL
-# ========================================================================
+# CSS Customizado para UI + Responsividade
 st.markdown("""
-<style>
-/* ================================
-   1. Forçar Tema Claro Universal
-   ================================ */
-html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebarContent"], .stApp {
-    background-color: #f0f2f6 !important;
-    color: #1c1c1c !important;
-    filter: none !important;
-}
-html[data-theme="dark"], body[data-theme="dark"] {
-    background-color: #f0f2f6 !important;
-    color: #1c1c1c !important;
-}
-
-/* ================================
-   2. Sidebar e Containers
-   ================================ */
-[data-testid="stSidebarContent"] {
-    background-color: #e6f7ff !important;
-    color: #1c1c1c !important;
-}
-[data-testid="stHeader"] {
-    background: transparent !important;
-}
-
-/* ================================
-   3. Blocos de Destaque
-   ================================ */
-.highlight-box {
-    padding: 20px;
-    border-radius: 12px;
-    background-color: #e6f7ff !important;
-    border-left: 6px solid #1e90ff;
-    margin-bottom: 25px;
-    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
-}
-h3, h2, h1, label, p, .css-16huue1, .css-10trblm {
-    color: #003366 !important;
-}
-
-/* ================================
-   4. Tabelas e Textos
-   ================================ */
-table {
-    background-color: white !important;
-    color: #222 !important;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-thead {
-    background-color: #f0f8ff !important;
-    color: #333 !important;
-}
-tbody tr:nth-of-type(even) {
-    background-color: #f9f9f9 !important;
-}
-tbody tr:hover {
-    background-color: #e6f7ff !important;
-}
-
-/* ================================
-   5. Links e Botões
-   ================================ */
-a, a:visited {
-    color: #1e90ff !important;
-    text-decoration: none !important;
-}
-a:hover {
-    color: #0056b3 !important;
-    text-decoration: underline !important;
-}
-
-/* ================================
-   6. Correções de Tema Escuro Nativo
-   ================================ */
-@media (prefers-color-scheme: dark) {
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebarContent"], .stApp {
-        background-color: #f0f2f6 !important;
-        color: #1c1c1c !important;
+    <style>
+    /* Estilo geral */
+    body, .stApp {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Poppins', sans-serif;
     }
-    h1, h2, h3, p, span, div {
-        color: #1c1c1c !important;
+
+    /* Cabeçalho */
+    .main-header {
+        text-align: center;
+        padding: 2rem 0 1rem 0;
+        color: #003366;
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
     }
-    table {
-        background-color: white !important;
-        color: #222 !important;
+
+    /* Subtítulo */
+    .subheader {
+        text-align: center;
+        font-size: 1.1rem;
+        color: #444;
+        margin-bottom: 2rem;
     }
-}
-</style>
+
+    /* Card do curso */
+    .course-card {
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        text-align: center;
+        border: 1px solid #eee;
+    }
+
+    .course-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+    }
+
+    .course-title {
+        color: #003366;
+        font-weight: 600;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .course-info {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.3rem;
+    }
+
+    .course-link a {
+        text-decoration: none;
+        color: white;
+        background-color: #0066cc;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+    }
+
+    .course-link a:hover {
+        background-color: #004d99;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .course-card {
+            padding: 1rem;
+        }
+        .course-title {
+            font-size: 1rem;
+        }
+        .course-info {
+            font-size: 0.8rem;
+        }
+    }
+    </style>
 """, unsafe_allow_html=True)
 
-# ========================================================================
-# 2. CONTEÚDO PRINCIPAL
-# ========================================================================
-st.title("🎯 Seu Mapa para Oportunidades Profissionais Gratuitas")
+# ==============================
+# FUNÇÃO DE RASPAGEM
+# ==============================
+@st.cache_data(show_spinner=False)
+def coletar_cursos():
+    url = "https://www.ev.org.br/cursos"
 
-st.markdown("""
-<div class="highlight-box">
-    <h3>🚀 ALAVANQUE SUA CARREIRA</h3>
-    <p>Nossa plataforma varre e organiza centenas de cursos de instituições de ponta (FGV, Bradesco, Coursera) usando <b>Inteligência Artificial</b> para que você encontre a habilidade exata que o mercado de trabalho precisa. <b>Sua próxima certificação está aqui.</b></p>
-</div>
-""", unsafe_allow_html=True)
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
 
-# ========================================================================
-# 3. SIDEBAR E FILTROS
-# ========================================================================
-st.sidebar.title("🛠️ Encontre a Oportunidade Perfeita")
+    service = Service("C:/chromedriver/chromedriver.exe")
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.get(url)
 
-if not df.empty:
-    categorias = ['Todas'] + sorted(df['Área de Foco'].unique())
-    selected_categoria = st.sidebar.selectbox("🧠 Filtro de Habilidade (Organizado pela IA)", categorias)
+    # Rola até o fim da página para carregar todos os cursos
+    ultima_altura = driver.execute_script("return document.body.scrollHeight")
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
+        nova_altura = driver.execute_script("return document.body.scrollHeight")
+        if nova_altura == ultima_altura:
+            break
+        ultima_altura = nova_altura
 
-    fontes = ['Todas'] + sorted(df['Fonte'].unique())
-    selected_fonte = st.sidebar.selectbox("📍 Instituição de Ensino", fontes)
-    
-    duracoes = ['Todas'] + sorted(df['Duracao'].unique())
-    selected_duracao = st.sidebar.selectbox("⏳ Duração Estimada", duracoes)
+    html = driver.page_source
+    driver.quit()
 
-    # Aplica os filtros
-    df_filtered = df.copy()
-    if selected_categoria != 'Todas':
-        df_filtered = df_filtered[df_filtered['Área de Foco'] == selected_categoria]
-    if selected_fonte != 'Todas':
-        df_filtered = df_filtered[df_filtered['Fonte'] == selected_fonte]
-    if selected_duracao != 'Todas':
-        df_filtered = df_filtered[df_filtered['Duracao'] == selected_duracao]
+    soup = BeautifulSoup(html, "html.parser")
+    cards = soup.find_all("a", class_="m-card")
+    lista_cursos = []
 
-    # ====================================================================
-    # 4. RESULTADOS
-    # ====================================================================
-    st.header(f"Total de Oportunidades Encontradas: {len(df_filtered)}")
-    st.markdown("---")
+    for card in cards:
+        try:
+            titulo_tag = card.find("h3", class_="m-card_title")
+            titulo = titulo_tag.get_text(strip=True) if titulo_tag else "N/A"
 
-    def make_clickable(link):
-        """Transforma URL em link clicável que abre em nova aba."""
-        if isinstance(link, str) and link.startswith('http'):
-            return f'<a target="_blank" href="{link}">Acessar Curso 🔗</a>'
-        return 'N/A'
+            duracao_tag = card.find("p", class_="m-info_desc -small m-card_info", string=re.compile("Duração"))
+            duracao = duracao_tag.find("strong").get_text(strip=True) if duracao_tag and duracao_tag.find("strong") else "N/A"
 
-    df_display = df_filtered[['Fonte', 'Área de Foco', 'Titulo', 'Duracao', 'Link']].copy()
-    df_display.columns = ['Fonte', 'Área Principal (IA)', 'Título do Curso', 'Duração', 'Acesso Rápido']
-    df_display['Acesso Rápido'] = df_display['Acesso Rápido'].apply(make_clickable)
+            nivel_tag = card.find("p", class_="m-info_desc -small m-card_info", string=re.compile("Nível"))
+            nivel = nivel_tag.find("strong").get_text(strip=True) if nivel_tag and nivel_tag.find("strong") else "N/A"
 
-    st.markdown(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
-    
-    st.markdown("---")
-    st.caption(f"Projeto Integrador: {len(df)} oportunidades analisadas de {df['Fonte'].nunique()} instituições. Solução de impacto social e replicabilidade.")
+            link = "https://www.ev.org.br" + card["href"] if card.get("href") else "N/A"
+
+            lista_cursos.append({
+                "Titulo": titulo,
+                "Duracao": duracao,
+                "Nivel": nivel,
+                "Link": link
+            })
+        except Exception:
+            continue
+
+    return pd.DataFrame(lista_cursos)
+
+# ==============================
+# INTERFACE PRINCIPAL
+# ==============================
+st.markdown("<h1 class='main-header'>🎓 Escola Virtual Fundação Bradesco</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subheader'>Explore cursos gratuitos e desenvolva novas habilidades profissionais.</p>", unsafe_allow_html=True)
+
+if st.button("🔍 Carregar Cursos", use_container_width=True):
+    with st.spinner("Buscando cursos... isso pode levar alguns segundos ⏳"):
+        df = coletar_cursos()
+
+    if df.empty:
+        st.warning("⚠️ Nenhum curso encontrado.")
+    else:
+        # Layout adaptável: 3 colunas no desktop, 1 no mobile
+        cols = st.columns(3) if st.session_state.get("wide_mode", True) else st.columns(1)
+        for i, (_, curso) in enumerate(df.iterrows()):
+            col = cols[i % len(cols)]
+            with col:
+                st.markdown(f"""
+                    <div class="course-card">
+                        <div class="course-title">{curso['Titulo']}</div>
+                        <div class="course-info"><b>Duração:</b> {curso['Duracao']}</div>
+                        <div class="course-info"><b>Nível:</b> {curso['Nivel']}</div>
+                        <div class="course-link"><a href="{curso['Link']}" target="_blank">Acessar Curso</a></div>
+                    </div>
+                """, unsafe_allow_html=True)
 else:
-    st.title("Sistema de Mapeamento de Oportunidades (Projeto Integrador)")
-    st.warning("Aguardando carregamento dos dados classificados...")
+    st.info("👆 Clique em **'Carregar Cursos'** para iniciar a busca.")
