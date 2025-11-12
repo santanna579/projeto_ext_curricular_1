@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Caminho para o arquivo final gerado pelo NLP
+# Caminho para o arquivo final classificado
 DATA_URL = 'cursos_classificados.csv'
 
 # Função para carregar e cachear os dados
@@ -33,17 +33,18 @@ def load_data():
 df = load_data()
 
 # ==============================================================================
-# 2. ESTILO E PÁGINA INICIAL (Gatilhos Mentais)
+# 1. ESTILO E PÁGINA INICIAL (Gatilhos Mentais)
 # ==============================================================================
 st.title("🎯 Seu Mapa para Oportunidades Profissionais Gratuitas")
 
 st.markdown("""
 <style>
-/* Remove o tema escuro (Dark Mode) e usa um fundo claro e limpo */
+/* 1. Fundo da Página (Leve e Claro para tema acolhedor) */
 .stApp {
     background-color: #f0f2f6; 
 }
-/* Estilo para a caixa de destaque (mais acolhedora) */
+
+/* 2. Destaque Inicial (Azul Pastel/Acolhedor) */
 .highlight-box {
     padding: 20px;
     border-radius: 12px;
@@ -55,6 +56,23 @@ st.markdown("""
 h3 {
     color: #007bff;
 }
+
+/* 3. CORREÇÃO CRÍTICA: Estilo da Tabela (Melhor Contraste e Legibilidade) */
+table {
+    background-color: white !important; /* Fundo branco puro para destaque */
+    border-radius: 8px; /* Borda arredondada */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave para levantar a tabela */
+}
+/* Estilo do cabeçalho da tabela */
+thead {
+    background-color: #f0f8ff !important; /* Azul muito claro para o cabeçalho */
+    color: #333333; /* Cor do texto do cabeçalho */
+}
+/* Fundo sutil para linhas pares (Zebra) */
+tbody tr:nth-of-type(even) {
+    background-color: #f9f9f9; /* Cinza muito sutil */
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -68,7 +86,7 @@ st.markdown("""
 
 
 # ==============================================================================
-# 3. SIDEBAR E FILTROS
+# 2. SIDEBAR E FILTROS
 # ==============================================================================
 st.sidebar.title("🛠️ Encontre a Oportunidade Perfeita")
 
@@ -87,7 +105,7 @@ if not df.empty:
         fontes
     )
     
-    # FILTRO 3: Duração (Mantido, mas simplificado)
+    # FILTRO 3: Duração
     duracoes = ['Todas'] + sorted(df['Duracao'].unique())
     selected_duracao = st.sidebar.selectbox(
         "⏳ Duração Estimada",
@@ -107,10 +125,8 @@ if not df.empty:
         df_filtered = df_filtered[df_filtered['Duracao'] == selected_duracao]
     
     
-    # Remove a exibição do gráfico, conforme solicitado.
-
     # ==============================================================================
-    # 4. TABELA DE RESULTADOS (LINKS CLICÁVEIS)
+    # 3. TABELA DE RESULTADOS (LINKS CLICÁVEIS)
     # ==============================================================================
     
     st.header(f"Total de Oportunidades Encontradas: {len(df_filtered)}")
