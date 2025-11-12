@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Caminho para o arquivo final classificado
+# Caminho para o arquivo final gerado pelo NLP
 DATA_URL = 'cursos_classificados.csv'
 
 # Função para carregar e cachear os dados
@@ -26,7 +26,6 @@ def load_data():
         df['Duracao'] = df['Duracao'].fillna('N/A')
         return df
     except FileNotFoundError:
-        # Se o arquivo não for encontrado (ex: no Streamlit Cloud), retornar DataFrame vazio.
         return pd.DataFrame()
 
 # Carregar os dados
@@ -39,10 +38,18 @@ st.title("🎯 Seu Mapa para Oportunidades Profissionais Gratuitas")
 
 st.markdown("""
 <style>
-/* 1. Fundo da Página (Leve e Claro para tema acolhedor) */
+/* 1. CORREÇÃO CRÍTICA: Fundo da Aplicação (Força a cor clara em todos os contêineres) */
+/* Usa um seletor abrangente para garantir que a cor #f0f2f6 se aplique universalmente */
 .stApp {
     background-color: #f0f2f6; 
 }
+[data-testid="stAppViewContainer"] {
+    background-color: #f0f2f6 !important;
+}
+[data-testid="stSidebarContent"] {
+    background-color: #e6f7ff !important; /* Um azul pastel leve para a sidebar */
+}
+
 
 /* 2. Destaque Inicial (Azul Pastel/Acolhedor) */
 .highlight-box {
@@ -57,20 +64,20 @@ h3 {
     color: #007bff;
 }
 
-/* 3. CORREÇÃO CRÍTICA: Estilo da Tabela (Melhor Contraste e Legibilidade) */
+/* 3. Estilo da Tabela (Contraste e Legibilidade) */
 table {
     background-color: white !important; /* Fundo branco puro para destaque */
-    border-radius: 8px; /* Borda arredondada */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave para levantar a tabela */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
 }
 /* Estilo do cabeçalho da tabela */
 thead {
-    background-color: #f0f8ff !important; /* Azul muito claro para o cabeçalho */
-    color: #333333; /* Cor do texto do cabeçalho */
+    background-color: #f0f8ff !important; 
+    color: #333333; 
 }
 /* Fundo sutil para linhas pares (Zebra) */
 tbody tr:nth-of-type(even) {
-    background-color: #f9f9f9; /* Cinza muito sutil */
+    background-color: #f9f9f9; 
 }
 
 </style>
