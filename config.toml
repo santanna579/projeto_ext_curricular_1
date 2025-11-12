@@ -1,0 +1,7 @@
+[theme]
+base="light"
+primaryColor="#1e90ff" # Azul vibrante (um tom forte para botões)
+backgroundColor="#f0f2f6" # Fundo Cinza Claro e Acolhedor
+secondaryBackgroundColor="#e6f7ff" # Azul Pastel para a Sidebar/Blocos
+textColor="#333333"
+font="sans serif"
