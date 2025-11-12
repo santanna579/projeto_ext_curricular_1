@@ -1,21 +1,18 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
-# --- CONFIGURAÇÕES E ESTILO ---
+# ------------------------ CONFIGURAÇÕES GERAIS ------------------------
 st.set_page_config(
-    page_title="Seu Futuro Começa Aqui: Oportunidades Gratuitas",
+    page_title="Seu Futuro Começa Aqui",
+    page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Caminho para o arquivo final gerado pelo NLP
-DATA_URL = 'cursos_classificados.csv'
+DATA_URL = "cursos_classificados.csv"
 
-# Função para carregar e cachear os dados
 @st.cache_data
 def load_data():
-    """Carrega e prepara os dados classificados."""
     try:
         df = pd.read_csv(DATA_URL)
         df.rename(columns={'Categoria_NLP': 'Área de Foco'}, inplace=True)
@@ -25,134 +22,167 @@ def load_data():
     except FileNotFoundError:
         return pd.DataFrame()
 
-# Carregar os dados
 df = load_data()
 
-# ==============================================================================
-# 1. ESTILO E PÁGINA INICIAL (Gatilhos Mentais)
-# ==============================================================================
-st.title("🎯 Seu Mapa para Oportunidades Profissionais Gratuitas")
-
+# ------------------------ CSS PERSONALIZADO ------------------------
 st.markdown("""
 <style>
-/* 1. CORREÇÃO CRÍTICA: Fundo da Aplicação (Força a cor clara em todos os contêineres) */
-/* Fundo principal da tela: Cinza Claro (sutilmente diferente do branco) */
-[data-testid="stAppViewContainer"] {
-    background-color: #f0f2f6 !important; 
-}
-/* Fundo da Barra Lateral: Azul Pastel (Para separar o bloco) */
-[data-testid="stSidebar"] {
-    background-color: #e6f7ff !important;
+/* Tema claro forçado */
+html, body, [data-testid="stAppViewContainer"], .stApp {
+  background: linear-gradient(135deg, #f9fbff 0%, #e9f6ff 100%) !important;
+  color: #111 !important;
 }
 
-
-/* 2. Destaque Inicial (Azul Pastel/Acolhedor) */
-.highlight-box {
-    padding: 20px;
-    border-radius: 12px;
-    background-color: #e6f7ff; /* Azul pastel */
-    border-left: 6px solid #1e90ff; /* Borda azul vibrante */
-    margin-bottom: 25px;
-    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
-}
-h3 {
-    color: #007bff;
+/* Corrige cores do modo escuro */
+html[data-theme="dark"], html[data-theme="dark"] body {
+  background: linear-gradient(135deg, #f9fbff 0%, #e9f6ff 100%) !important;
+  color: #111 !important;
 }
 
-/* 3. Estilo da Tabela (Contraste e Legibilidade) */
-table {
-    background-color: white !important; /* Fundo branco puro para destaque */
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+/* Header */
+.header {
+  text-align: center;
+  padding-top: 60px;
+  padding-bottom: 20px;
 }
-/* Estilo do cabeçalho da tabela */
-thead {
-    background-color: #f0f8ff !important; 
-    color: #333333; 
+.header h1 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #003366;
 }
-/* Fundo sutil para linhas pares (Zebra) */
-tbody tr:nth-of-type(even) {
-    background-color: #f9f9f9; 
+.header p {
+  font-size: 1.1rem;
+  color: #00509e;
+  margin-top: -10px;
 }
 
+/* Botão principal */
+.stButton>button {
+  width: 70%;
+  max-width: 400px;
+  background: linear-gradient(90deg, #0073e6, #00a8ff);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 20px;
+}
+.stButton>button:hover {
+  background: linear-gradient(90deg, #005bb5, #008ad9);
+}
+
+/* Grid responsivo */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 1000px) {
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 680px) {
+  .cards-grid { grid-template-columns: repeat(1, 1fr); }
+}
+
+/* Card de curso */
+.course-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.course-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+.course-title {
+  color: #003366;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+.course-meta {
+  color: #444;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.course-cta a {
+  display: inline-block;
+  background: #0073e6;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.course-cta a:hover {
+  background: #005bb5;
+}
 </style>
 """, unsafe_allow_html=True)
 
+# ------------------------ TELA INICIAL ------------------------
+if "started" not in st.session_state:
+    st.session_state.started = False
 
-st.markdown("""
-<div class="highlight-box">
-    <h3>🚀 ALAVANQUE SUA CARREIRA</h3>
-    <p>Nossa plataforma varre e organiza centenas de cursos de instituições de ponta (FGV, Bradesco, Coursera) usando <b>Inteligência Artificial</b> para que você encontre a habilidade exata que o mercado de trabalho precisa. <b>Sua próxima certificação está aqui.</b></p>
-</div>
-""", unsafe_allow_html=True)
+if not st.session_state.started:
+    st.markdown('<div class="header">', unsafe_allow_html=True)
+    st.markdown("🎓", unsafe_allow_html=True)
+    st.markdown("<h1>Seu Futuro Começa Aqui</h1>", unsafe_allow_html=True)
+    st.markdown("<p>Explore cursos gratuitos das melhores instituições e desenvolva novas habilidades.</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    if st.button("🌟 Explorar Cursos"):
+        st.session_state.started = True
+        st.experimental_rerun()
+    st.stop()
 
+# ------------------------ CONTEÚDO PRINCIPAL ------------------------
+st.header("🔎 Explorar Cursos Disponíveis")
+st.caption("Filtre por área de foco, duração ou instituição.")
 
-# ==============================================================================
-# 2. SIDEBAR E FILTROS
-# ==============================================================================
-st.sidebar.title("🛠️ Encontre a Oportunidade Perfeita")
-
-if not df.empty:
-    # FILTRO 1: ÁREA DE FOCO (Categoria classificada pela IA)
+if df.empty:
+    st.error("⚠️ Nenhum arquivo CSV encontrado. Coloque 'cursos_classificados.csv' no mesmo diretório do app.")
+else:
+    # Filtros laterais
+    st.sidebar.header("Filtros")
     categorias = ['Todas'] + sorted(df['Área de Foco'].unique())
-    selected_categoria = st.sidebar.selectbox(
-        "🧠 Filtro de Habilidade (Organizado pela IA)",
-        categorias
-    )
-
-    # FILTRO 2: Fonte
+    selected_categoria = st.sidebar.selectbox("Área de Foco (IA)", categorias)
     fontes = ['Todas'] + sorted(df['Fonte'].unique())
-    selected_fonte = st.sidebar.selectbox(
-        "📍 Instituição de Ensino",
-        fontes
-    )
-    
-    # FILTRO 3: Duração
+    selected_fonte = st.sidebar.selectbox("Fonte", fontes)
     duracoes = ['Todas'] + sorted(df['Duracao'].unique())
-    selected_duracao = st.sidebar.selectbox(
-        "⏳ Duração Estimada",
-        duracoes
-    )
+    selected_duracao = st.sidebar.selectbox("Duração", duracoes)
 
-    # Aplica os filtros
     df_filtered = df.copy()
-    
     if selected_categoria != 'Todas':
         df_filtered = df_filtered[df_filtered['Área de Foco'] == selected_categoria]
-        
     if selected_fonte != 'Todas':
         df_filtered = df_filtered[df_filtered['Fonte'] == selected_fonte]
-
     if selected_duracao != 'Todas':
         df_filtered = df_filtered[df_filtered['Duracao'] == selected_duracao]
-    
-    
-    # ==============================================================================
-    # 3. TABELA DE RESULTADOS (LINKS CLICÁVEIS)
-    # ==============================================================================
-    
-    st.header(f"Total de Oportunidades Encontradas: {len(df_filtered)}")
-    st.markdown("---")
 
-    # Função para gerar link clicável que abre em nova aba
-    def make_clickable(link):
-        """Transforma URL em link clicável que abre em nova aba (target='_blank')."""
-        if isinstance(link, str) and link.startswith('http'):
-            return f'<a target="_blank" href="{link}">Acessar Curso 🔗</a>'
-        return 'N/A'
+    st.subheader(f"Total de cursos encontrados: {len(df_filtered)}")
+    st.write("")  # espaço visual
 
-    df_display = df_filtered[['Fonte', 'Área de Foco', 'Titulo', 'Duracao', 'Link']].copy()
-    df_display.columns = ['Fonte', 'Área Principal (IA)', 'Título do Curso', 'Duração', 'Acesso Rápido']
-    
-    # Aplica a função para criar os links CLICÁVEIS
-    df_display['Acesso Rápido'] = df_display['Acesso Rápido'].apply(make_clickable)
+    # Grade de cards
+    html_cards = '<div class="cards-grid">'
+    for _, row in df_filtered.iterrows():
+        titulo = row.get('Titulo', '-')
+        dur = row.get('Duracao', '-')
+        nivel = row.get('Nivel', row.get('Area', '-'))
+        link = row.get('Link', '')
+        fonte = row.get('Fonte', '')
+        html_cards += f'''
+        <div class="course-card">
+            <div class="course-title">{titulo}</div>
+            <div class="course-meta"><b>Fonte:</b> {fonte} • <b>Duração:</b> {dur} • <b>Nível:</b> {nivel}</div>
+            <div class="course-cta"><a href="{link}" target="_blank">Acessar Curso</a></div>
+        </div>
+        '''
+    html_cards += '</div>'
+    st.markdown(html_cards, unsafe_allow_html=True)
 
-    # Exibe a tabela final
-    st.markdown(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
-    
-    st.markdown("---")
-    st.caption(f"Projeto Integrador: {len(df)} oportunidades analisadas de {df['Fonte'].nunique()} instituições. Solução de impacto social e replicabilidade.")
-
-else:
-    st.title("Sistema de Mapeamento de Oportunidades (Projeto Integrador)")
-    st.warning("Aguardando carregamento dos dados classificados...")
+# Rodapé
+st.markdown("---")
+st.caption("💡 Projeto Integrador | Dados extraídos via script local | Interface feita com Streamlit")
