@@ -1,192 +1,219 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
-# --- 1. CONFIGURAÇÃO DA PÁGINA E ESTILO ---
+# --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
-    page_title="Mapa de Oportunidades | Cursos Gratuitos",
-    page_icon="🎯",
+    page_title="Mapa de Oportunidades | By Jéssica Sant'Anna",
+    page_icon="✨",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- Forçar o tema claro e injetar CSS customizado ---
-# Este CSS resolve o problema de fontes claras no tema claro e melhora o design geral.
+# --- 2. ESTILO E DESIGN (CSS) ---
+# CSS para forçar tema claro, novas cores, fontes e design dos componentes.
 st.markdown("""
 <style>
-    /* Força o tema claro (background principal e texto) */
-    .stApp {
-        background-color: #f0f2f6; /* Cinza claro para o fundo */
+    /* Importa uma fonte mais moderna do Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap' );
+
+    /* Configurações globais de corpo e fonte */
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f0f2f6;
     }
 
-    /* Títulos e textos com cores de alto contraste */
-    h1, h2, h3, h4, h5, h6 {
-        color: #1a202c; /* Cor escura para os títulos */
+    /* Paleta de Cores */
+    :root {
+        --primary-color: #4f46e5; /* Roxo/Índigo vibrante */
+        --secondary-color: #111827; /* Cinza escuro para texto */
+        --background-color: #f9fafb; /* Fundo principal um pouco mais claro */
+        --sidebar-bg: #ffffff;
+        --highlight-bg: #eef2ff; /* Fundo do highlight (tom de roxo claro) */
+    }
+
+    /* Força o fundo do app */
+    .stApp {
+        background-color: var(--background-color);
+    }
+
+    /* Títulos */
+    h1, h2, h3 {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: var(--secondary-color);
+    }
+
+    /* Barra Lateral */
+    [data-testid="stSidebar"] {
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid #e5e7eb;
     }
     
-    p, .stMarkdown {
-        color: #2d3748; /* Cor um pouco mais suave para parágrafos */
+    /* Botões de Rádio (Filtros) */
+    .stRadio > label {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--secondary-color);
     }
 
-    /* Design da barra lateral */
-    [data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e2e8f0;
-    }
-
-    /* Caixa de destaque com gatilhos mentais */
+    /* Caixa de Destaque */
     .highlight-box {
-        background-color: #e6f7ff; /* Azul bem claro */
-        border-left: 5px solid #1c64f2; /* Borda azul forte */
+        background-color: var(--highlight-bg);
+        border-left: 5px solid var(--primary-color);
         padding: 25px;
         border-radius: 10px;
         margin: 20px 0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     .highlight-box h3 {
-        color: #1c64f2; /* Azul forte para o título da caixa */
-        margin-bottom: 10px;
-    }
-    .highlight-box p {
-        font-size: 1.1rem;
-        line-height: 1.6;
+        color: var(--primary-color);
     }
 
-    /* Estilo da tabela de cursos */
-    .stDataFrame {
-        border-radius: 10px;
+    /* Tabela */
+    .stMarkdown table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 8px;
         overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .stMarkdown th {
+        background-color: var(--primary-color);
+        color: white;
+        text-align: left;
+        padding: 12px 15px;
+    }
+    .stMarkdown td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .stMarkdown tr:nth-of-type(even) {
+        background-color: #f9fafb;
+    }
+    .stMarkdown tr:last-of-type td {
+        border-bottom: none;
     }
     
-    /* Link de acesso ao curso mais chamativo */
+    /* Link de acesso ao curso */
     a {
-        color: #1c64f2;
-        font-weight: bold;
+        color: var(--primary-color);
+        font-weight: 600;
         text-decoration: none;
     }
     a:hover {
         text-decoration: underline;
     }
+    
+    /* Rodapé */
+    .footer {
+        text-align: center;
+        padding: 20px;
+        margin-top: 40px;
+        color: #6b7280;
+        border-top: 1px solid #e5e7eb;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 
-# --- 2. CARREGAMENTO E CACHE DOS DADOS ---
-# Caminho para o arquivo CSV gerado pelo seu script de NLP
-DATA_URL = 'cursos_classificados.csv'
-
+# --- 3. CARREGAMENTO DOS DADOS ---
 @st.cache_data
 def load_data():
-    """
-    Carrega os dados do CSV, renomeia colunas para clareza e trata valores ausentes.
-    O cache acelera o carregamento em execuções futuras.
-    """
     try:
-        df = pd.read_csv(DATA_URL)
-        # Renomeia a coluna para ser mais intuitiva para o usuário final
+        df = pd.read_csv('cursos_classificados.csv')
         df.rename(columns={'Categoria_NLP': 'Área de Foco'}, inplace=True)
-        # Preenche categorias e durações vazias para evitar erros nos filtros
         df['Área de Foco'] = df['Área de Foco'].fillna('Outras')
         df['Duracao'] = df['Duracao'].fillna('Não Informada')
         return df
     except FileNotFoundError:
-        # Se o arquivo não for encontrado, exibe um aviso em vez de quebrar o app
-        st.error(f"Erro: O arquivo '{DATA_URL}' não foi encontrado. Por favor, verifique se o arquivo está no mesmo diretório do seu app.")
+        st.error("Arquivo 'cursos_classificados.csv' não encontrado. Verifique o caminho.")
         return pd.DataFrame()
 
-# Carrega os dados na inicialização do app
 df = load_data()
 
-# --- 3. LAYOUT DA PÁGINA PRINCIPAL ---
+# --- 4. TELA DE BOAS-VINDAS (POP-UP FAKE) ---
+# Usamos o st.session_state para controlar se a tela de boas-vindas já foi vista.
+if 'show_welcome' not in st.session_state:
+    st.session_state.show_welcome = True
 
-# Título e subtítulo com gatilhos mentais
-st.title("🎯 Seu Mapa para a Próxima Oportunidade")
-st.markdown("### Encontre cursos gratuitos das melhores instituições, analisados e organizados por Inteligência Artificial.")
+if st.session_state.show_welcome:
+    # URL de uma imagem inspiradora (substitua se quiser)
+    welcome_image_url = "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+    
+    col1, col2 = st.columns([1, 1] )
+    with col1:
+        st.image(welcome_image_url, use_column_width=True)
+    with col2:
+        st.title("O Futuro da sua Carreira Começa Agora.")
+        st.markdown("#### Uma plataforma inteligente que mapeia os melhores cursos gratuitos para você.")
+        st.write("") # Espaço
+        if st.button("🚀 Começar a Explorar"):
+            st.session_state.show_welcome = False
+            st.experimental_rerun() # Recarrega o script para mostrar a página principal
+    # Para o script aqui até o usuário clicar no botão
+    st.stop()
 
-# Caixa de destaque
-st.markdown("""
-<div class="highlight-box">
-    <h3>🚀 Impulsione sua Carreira, Hoje.</h3>
-    <p>Navegue por centenas de cursos gratuitos de instituições como <b>FGV, Bradesco e Coursera</b>. Nossa IA classifica cada oportunidade para que você encontre exatamente o que precisa para se destacar no mercado. <b>Sua qualificação está a um clique de distância.</b></p>
-</div>
-""", unsafe_allow_html=True)
 
+# --- 5. PÁGINA PRINCIPAL (APÓS BOAS-VINDAS) ---
 
-# --- 4. BARRA LATERAL COM FILTROS ---
-st.sidebar.header("🛠️ Filtros Inteligentes")
+# Barra Lateral com Filtros Melhorados (Radio Buttons)
+st.sidebar.title("🛠️ Filtros Inteligentes")
 
 if not df.empty:
-    # Filtro por Área de Foco (gerada pelo NLP)
+    # Filtro por Área de Foco com Radio Buttons
     categorias = ['Todas'] + sorted(df['Área de Foco'].unique())
-    selected_categoria = st.sidebar.selectbox(
-        "🧠 Filtrar por Área de Foco:",
+    st.sidebar.markdown("### 🧠 Por Área de Foco")
+    selected_categoria = st.sidebar.radio(
+        "Selecione a área de interesse:",
         categorias,
-        help="Áreas identificadas automaticamente pela nossa IA."
+        label_visibility="collapsed" # Esconde o label principal do radio
     )
 
     # Filtro por Instituição
     fontes = ['Todas'] + sorted(df['Fonte'].unique())
+    st.sidebar.markdown("### 🏫 Por Instituição")
     selected_fonte = st.sidebar.selectbox(
-        "🏫 Filtrar por Instituição:",
-        fontes
+        "Selecione a instituição:",
+        fontes,
+        label_visibility="collapsed"
     )
 
-    # Aplicação dos filtros no DataFrame
+    # Aplicação dos filtros
     df_filtered = df.copy()
     if selected_categoria != 'Todas':
         df_filtered = df_filtered[df_filtered['Área de Foco'] == selected_categoria]
     if selected_fonte != 'Todas':
         df_filtered = df_filtered[df_filtered['Fonte'] == selected_fonte]
 
-    # --- 5. EXIBIÇÃO DOS RESULTADOS ---
-    
-    st.header(f"✨ {len(df_filtered)} Oportunidades Encontradas")
-    st.markdown("Use a tabela abaixo para explorar os cursos. Clique no link para acessar diretamente a página.")
+    # Conteúdo Principal
+    st.title("🎯 Mapa de Oportunidades Gratuitas")
+    st.markdown(f"### {len(df_filtered)} cursos encontrados para você.")
 
-    # Preparação da tabela para exibição
+    # Caixa de Destaque
+    st.markdown("""
+    <div class="highlight-box">
+        <h3>✨ Qualificação ao seu Alcance</h3>
+        <p>Navegue por cursos de instituições como <b>FGV, Bradesco e Coursera</b>. Nossa IA organiza tudo para que você encontre a habilidade certa para se destacar.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Tabela de Resultados
     df_display = df_filtered[['Titulo', 'Área de Foco', 'Fonte', 'Duracao', 'Link']].copy()
     df_display.rename(columns={
         'Titulo': 'Título do Curso',
-        'Área de Foco': 'Área Principal (IA)',
+        'Área de Foco': 'Área Principal',
         'Fonte': 'Instituição',
         'Duracao': 'Duração'
     }, inplace=True)
+    df_display['Link'] = df_display['Link'].apply(lambda link: f'<a href="{link}" target="_blank">Acessar Curso ➔</a>' if pd.notna(link) else 'N/A')
 
-    # Transforma a coluna 'Link' em links HTML clicáveis que abrem em nova aba
-    df_display['Link'] = df_display['Link'].apply(lambda link: f'<a href="{link}" target="_blank">Acessar Curso ➔</a>' if pd.notna(link) else 'Link indisponível')
-
-    # Exibe a tabela usando st.markdown para renderizar o HTML dos links
     st.markdown(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
-    
-    st.markdown("---")
-
-    # --- 6. GRÁFICO DE VISÃO DE MERCADO ---
-    st.header("📊 Visão Geral das Oportunidades")
-    st.markdown("Veja a distribuição de cursos por área de foco. Isso pode te ajudar a identificar as áreas com mais oportunidades disponíveis.")
-
-    if not df_filtered.empty:
-        # Contagem de cursos por categoria
-        chart_data = df_filtered['Área de Foco'].value_counts().reset_index()
-        chart_data.columns = ['Área de Foco', 'Quantidade de Cursos']
-
-        # Criação do gráfico de barras com Plotly
-        fig = px.bar(
-            chart_data,
-            x='Quantidade de Cursos',
-            y='Área de Foco',
-            orientation='h',
-            title='Quantidade de Cursos por Área',
-            labels={'Quantidade de Cursos': 'Nº de Cursos', 'Área de Foco': 'Área'},
-            color_discrete_sequence=['#1c64f2']
-        )
-        fig.update_layout(
-            yaxis={'categoryorder':'total ascending'}, # Ordena as barras da menor para a maior
-            plot_bgcolor='rgba(0,0,0,0)', # Fundo transparente
-            paper_bgcolor='rgba(0,0,0,0)'
-        )
-        st.plotly_chart(fig, use_container_width=True)
 
 else:
-    # Mensagem exibida se o DataFrame estiver vazio (ex: arquivo não encontrado)
-    st.warning("Ainda não há dados para exibir. Carregue o arquivo `cursos_classificados.csv` para começar.")
+    st.warning("Aguardando carregamento dos dados...")
 
+# --- 6. RODAPÉ ---
+st.markdown("""
+<div class="footer">
+    Criado por Jéssica Mendes Pereira Sant'Anna
+</div>
+""", unsafe_allow_html=True)
