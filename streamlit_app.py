@@ -1,188 +1,192 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
-# ------------------------ CONFIGURAÇÕES GERAIS ------------------------
+# --- 1. CONFIGURAÇÃO DA PÁGINA E ESTILO ---
 st.set_page_config(
-    page_title="Seu Futuro Começa Aqui",
-    page_icon="🎓",
+    page_title="Mapa de Oportunidades | Cursos Gratuitos",
+    page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-DATA_URL = "cursos_classificados.csv"
-
-@st.cache_data
-def load_data():
-    try:
-        df = pd.read_csv(DATA_URL)
-        df.rename(columns={'Categoria_NLP': 'Área de Foco'}, inplace=True)
-        df['Área de Foco'] = df['Área de Foco'].fillna('Outras Habilidades')
-        df['Duracao'] = df['Duracao'].fillna('N/A')
-        return df
-    except FileNotFoundError:
-        return pd.DataFrame()
-
-df = load_data()
-
-# ------------------------ CSS PERSONALIZADO ------------------------
+# --- Forçar o tema claro e injetar CSS customizado ---
+# Este CSS resolve o problema de fontes claras no tema claro e melhora o design geral.
 st.markdown("""
 <style>
-/* Tema claro forçado */
-html, body, [data-testid="stAppViewContainer"], .stApp {
-  background: linear-gradient(135deg, #f9fbff 0%, #e9f6ff 100%) !important;
-  color: #111 !important;
-}
+    /* Força o tema claro (background principal e texto) */
+    .stApp {
+        background-color: #f0f2f6; /* Cinza claro para o fundo */
+    }
 
-/* Corrige cores do modo escuro */
-html[data-theme="dark"], html[data-theme="dark"] body {
-  background: linear-gradient(135deg, #f9fbff 0%, #e9f6ff 100%) !important;
-  color: #111 !important;
-}
+    /* Títulos e textos com cores de alto contraste */
+    h1, h2, h3, h4, h5, h6 {
+        color: #1a202c; /* Cor escura para os títulos */
+    }
+    
+    p, .stMarkdown {
+        color: #2d3748; /* Cor um pouco mais suave para parágrafos */
+    }
 
-/* Header */
-.header {
-  text-align: center;
-  padding-top: 60px;
-  padding-bottom: 20px;
-}
-.header h1 {
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: #003366;
-}
-.header p {
-  font-size: 1.1rem;
-  color: #00509e;
-  margin-top: -10px;
-}
+    /* Design da barra lateral */
+    [data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #e2e8f0;
+    }
 
-/* Botão principal */
-.stButton>button {
-  width: 70%;
-  max-width: 400px;
-  background: linear-gradient(90deg, #0073e6, #00a8ff);
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 10px;
-  border: none;
-  padding: 10px 20px;
-  margin-top: 20px;
-}
-.stButton>button:hover {
-  background: linear-gradient(90deg, #005bb5, #008ad9);
-}
+    /* Caixa de destaque com gatilhos mentais */
+    .highlight-box {
+        background-color: #e6f7ff; /* Azul bem claro */
+        border-left: 5px solid #1c64f2; /* Borda azul forte */
+        padding: 25px;
+        border-radius: 10px;
+        margin: 20px 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .highlight-box h3 {
+        color: #1c64f2; /* Azul forte para o título da caixa */
+        margin-bottom: 10px;
+    }
+    .highlight-box p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
 
-/* Grid responsivo */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-@media (max-width: 1000px) {
-  .cards-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 680px) {
-  .cards-grid { grid-template-columns: repeat(1, 1fr); }
-}
-
-/* Card de curso */
-.course-card {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.course-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-}
-.course-title {
-  color: #003366;
-  font-weight: 600;
-  font-size: 1.05rem;
-  margin-bottom: 6px;
-}
-.course-meta {
-  color: #444;
-  font-size: 0.9rem;
-  margin-bottom: 10px;
-}
-.course-cta a {
-  display: inline-block;
-  background: #0073e6;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 8px;
-  text-decoration: none;
-}
-.course-cta a:hover {
-  background: #005bb5;
-}
+    /* Estilo da tabela de cursos */
+    .stDataFrame {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    /* Link de acesso ao curso mais chamativo */
+    a {
+        color: #1c64f2;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ------------------------ TELA INICIAL ------------------------
-if "started" not in st.session_state:
-    st.session_state.started = False
 
-if not st.session_state.started:
-    st.markdown('<div class="header">', unsafe_allow_html=True)
-    st.markdown("🎓", unsafe_allow_html=True)
-    st.markdown("<h1>Seu Futuro Começa Aqui</h1>", unsafe_allow_html=True)
-    st.markdown("<p>Explore cursos gratuitos das melhores instituições e desenvolva novas habilidades.</p>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-    if st.button("🌟 Explorar Cursos"):
-        st.session_state.started = True
-        st.experimental_rerun()
-    st.stop()
+# --- 2. CARREGAMENTO E CACHE DOS DADOS ---
+# Caminho para o arquivo CSV gerado pelo seu script de NLP
+DATA_URL = 'cursos_classificados.csv'
 
-# ------------------------ CONTEÚDO PRINCIPAL ------------------------
-st.header("🔎 Explorar Cursos Disponíveis")
-st.caption("Filtre por área de foco, duração ou instituição.")
+@st.cache_data
+def load_data():
+    """
+    Carrega os dados do CSV, renomeia colunas para clareza e trata valores ausentes.
+    O cache acelera o carregamento em execuções futuras.
+    """
+    try:
+        df = pd.read_csv(DATA_URL)
+        # Renomeia a coluna para ser mais intuitiva para o usuário final
+        df.rename(columns={'Categoria_NLP': 'Área de Foco'}, inplace=True)
+        # Preenche categorias e durações vazias para evitar erros nos filtros
+        df['Área de Foco'] = df['Área de Foco'].fillna('Outras')
+        df['Duracao'] = df['Duracao'].fillna('Não Informada')
+        return df
+    except FileNotFoundError:
+        # Se o arquivo não for encontrado, exibe um aviso em vez de quebrar o app
+        st.error(f"Erro: O arquivo '{DATA_URL}' não foi encontrado. Por favor, verifique se o arquivo está no mesmo diretório do seu app.")
+        return pd.DataFrame()
 
-if df.empty:
-    st.error("⚠️ Nenhum arquivo CSV encontrado. Coloque 'cursos_classificados.csv' no mesmo diretório do app.")
-else:
-    # Filtros laterais
-    st.sidebar.header("Filtros")
+# Carrega os dados na inicialização do app
+df = load_data()
+
+# --- 3. LAYOUT DA PÁGINA PRINCIPAL ---
+
+# Título e subtítulo com gatilhos mentais
+st.title("🎯 Seu Mapa para a Próxima Oportunidade")
+st.markdown("### Encontre cursos gratuitos das melhores instituições, analisados e organizados por Inteligência Artificial.")
+
+# Caixa de destaque
+st.markdown("""
+<div class="highlight-box">
+    <h3>🚀 Impulsione sua Carreira, Hoje.</h3>
+    <p>Navegue por centenas de cursos gratuitos de instituições como <b>FGV, Bradesco e Coursera</b>. Nossa IA classifica cada oportunidade para que você encontre exatamente o que precisa para se destacar no mercado. <b>Sua qualificação está a um clique de distância.</b></p>
+</div>
+""", unsafe_allow_html=True)
+
+
+# --- 4. BARRA LATERAL COM FILTROS ---
+st.sidebar.header("🛠️ Filtros Inteligentes")
+
+if not df.empty:
+    # Filtro por Área de Foco (gerada pelo NLP)
     categorias = ['Todas'] + sorted(df['Área de Foco'].unique())
-    selected_categoria = st.sidebar.selectbox("Área de Foco (IA)", categorias)
-    fontes = ['Todas'] + sorted(df['Fonte'].unique())
-    selected_fonte = st.sidebar.selectbox("Fonte", fontes)
-    duracoes = ['Todas'] + sorted(df['Duracao'].unique())
-    selected_duracao = st.sidebar.selectbox("Duração", duracoes)
+    selected_categoria = st.sidebar.selectbox(
+        "🧠 Filtrar por Área de Foco:",
+        categorias,
+        help="Áreas identificadas automaticamente pela nossa IA."
+    )
 
+    # Filtro por Instituição
+    fontes = ['Todas'] + sorted(df['Fonte'].unique())
+    selected_fonte = st.sidebar.selectbox(
+        "🏫 Filtrar por Instituição:",
+        fontes
+    )
+
+    # Aplicação dos filtros no DataFrame
     df_filtered = df.copy()
     if selected_categoria != 'Todas':
         df_filtered = df_filtered[df_filtered['Área de Foco'] == selected_categoria]
     if selected_fonte != 'Todas':
         df_filtered = df_filtered[df_filtered['Fonte'] == selected_fonte]
-    if selected_duracao != 'Todas':
-        df_filtered = df_filtered[df_filtered['Duracao'] == selected_duracao]
 
-    st.subheader(f"Total de cursos encontrados: {len(df_filtered)}")
-    st.write("")  # espaço visual
+    # --- 5. EXIBIÇÃO DOS RESULTADOS ---
+    
+    st.header(f"✨ {len(df_filtered)} Oportunidades Encontradas")
+    st.markdown("Use a tabela abaixo para explorar os cursos. Clique no link para acessar diretamente a página.")
 
-    # Grade de cards
-    html_cards = '<div class="cards-grid">'
-    for _, row in df_filtered.iterrows():
-        titulo = row.get('Titulo', '-')
-        dur = row.get('Duracao', '-')
-        nivel = row.get('Nivel', row.get('Area', '-'))
-        link = row.get('Link', '')
-        fonte = row.get('Fonte', '')
-        html_cards += f'''
-        <div class="course-card">
-            <div class="course-title">{titulo}</div>
-            <div class="course-meta"><b>Fonte:</b> {fonte} • <b>Duração:</b> {dur} • <b>Nível:</b> {nivel}</div>
-            <div class="course-cta"><a href="{link}" target="_blank">Acessar Curso</a></div>
-        </div>
-        '''
-    html_cards += '</div>'
-    st.markdown(html_cards, unsafe_allow_html=True)
+    # Preparação da tabela para exibição
+    df_display = df_filtered[['Titulo', 'Área de Foco', 'Fonte', 'Duracao', 'Link']].copy()
+    df_display.rename(columns={
+        'Titulo': 'Título do Curso',
+        'Área de Foco': 'Área Principal (IA)',
+        'Fonte': 'Instituição',
+        'Duracao': 'Duração'
+    }, inplace=True)
 
-# Rodapé
-st.markdown("---")
-st.caption("💡 Projeto Integrador | Dados extraídos via script local | Interface feita com Streamlit")
+    # Transforma a coluna 'Link' em links HTML clicáveis que abrem em nova aba
+    df_display['Link'] = df_display['Link'].apply(lambda link: f'<a href="{link}" target="_blank">Acessar Curso ➔</a>' if pd.notna(link) else 'Link indisponível')
+
+    # Exibe a tabela usando st.markdown para renderizar o HTML dos links
+    st.markdown(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
+    
+    st.markdown("---")
+
+    # --- 6. GRÁFICO DE VISÃO DE MERCADO ---
+    st.header("📊 Visão Geral das Oportunidades")
+    st.markdown("Veja a distribuição de cursos por área de foco. Isso pode te ajudar a identificar as áreas com mais oportunidades disponíveis.")
+
+    if not df_filtered.empty:
+        # Contagem de cursos por categoria
+        chart_data = df_filtered['Área de Foco'].value_counts().reset_index()
+        chart_data.columns = ['Área de Foco', 'Quantidade de Cursos']
+
+        # Criação do gráfico de barras com Plotly
+        fig = px.bar(
+            chart_data,
+            x='Quantidade de Cursos',
+            y='Área de Foco',
+            orientation='h',
+            title='Quantidade de Cursos por Área',
+            labels={'Quantidade de Cursos': 'Nº de Cursos', 'Área de Foco': 'Área'},
+            color_discrete_sequence=['#1c64f2']
+        )
+        fig.update_layout(
+            yaxis={'categoryorder':'total ascending'}, # Ordena as barras da menor para a maior
+            plot_bgcolor='rgba(0,0,0,0)', # Fundo transparente
+            paper_bgcolor='rgba(0,0,0,0)'
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+else:
+    # Mensagem exibida se o DataFrame estiver vazio (ex: arquivo não encontrado)
+    st.warning("Ainda não há dados para exibir. Carregue o arquivo `cursos_classificados.csv` para começar.")
+
