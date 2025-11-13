@@ -9,34 +9,125 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. ESTILO E DESIGN (CSS) ---
+# --- 2. ESTILO RESPONSIVO A TEMA (CLARO E ESCURO) ---
 st.markdown("""
 <style>
+    /* Importa a fonte do Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap' );
-    body { font-family: 'Inter', sans-serif; background-color: #f0f2f6; }
+
+    /* 
+    ================================================================
+    DEFINIÇÃO DAS VARIÁVEIS DE COR (TEMA CLARO COMO PADRÃO)
+    ================================================================
+    */
     :root {
-        --primary-color: #4f46e5;
-        --secondary-color: #111827;
-        --background-color: #f9fafb;
-        --sidebar-bg: #ffffff;
-        --highlight-bg: #eef2ff;
+        --font-family: 'Inter', sans-serif;
+        
+        /* Tema Claro */
+        --primary-color: #4f46e5;       /* Roxo/Índigo vibrante */
+        --text-color: #111827;          /* Cinza bem escuro para texto */
+        --bg-color: #f9fafb;            /* Fundo principal (cinza muito claro) */
+        --sidebar-bg: #ffffff;          /* Fundo da sidebar (branco) */
+        --highlight-bg: #eef2ff;        /* Fundo da caixa de destaque */
+        --table-header-bg: #4f46e5;     /* Fundo do cabeçalho da tabela */
+        --table-header-text: #ffffff;   /* Texto do cabeçalho da tabela */
+        --table-row-even-bg: #f3f4f6;   /* Fundo da linha par da tabela */
+        --border-color: #e5e7eb;        /* Cor da borda */
     }
-    .stApp { background-color: var(--background-color); }
-    h1, h2, h3 { font-family: 'Inter', sans-serif; font-weight: 700; color: var(--secondary-color); }
-    [data-testid="stSidebar"] { background-color: var(--sidebar-bg); border-right: 1px solid #e5e7eb; }
-    .stRadio > label { font-size: 1.1rem; font-weight: 600; color: var(--secondary-color); }
-    .highlight-box { background-color: var(--highlight-bg); border-left: 5px solid var(--primary-color); padding: 25px; border-radius: 10px; margin: 20px 0; }
-    .highlight-box h3 { color: var(--primary-color); }
-    .stMarkdown table { width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-    .stMarkdown th { background-color: var(--primary-color); color: white; text-align: left; padding: 12px 15px; }
-    .stMarkdown td { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; }
-    .stMarkdown tr:nth-of-type(even) { background-color: #f9fafb; }
-    .stMarkdown tr:last-of-type td { border-bottom: none; }
-    a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .footer { text-align: center; padding: 20px; margin-top: 40px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+
+    /* 
+    ================================================================
+    SOBRESCRITA DAS VARIÁVEIS PARA O TEMA ESCURO
+    ================================================================
+    */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --primary-color: #818cf8;       /* Roxo/Índigo mais claro para contraste */
+            --text-color: #e5e7eb;          /* Cinza claro para texto */
+            --bg-color: #111827;            /* Fundo principal (cinza-azulado escuro) */
+            --sidebar-bg: #1f2937;          /* Fundo da sidebar (um tom mais claro) */
+            --highlight-bg: #374151;        /* Fundo da caixa de destaque */
+            --table-header-bg: #818cf8;     /* Fundo do cabeçalho da tabela */
+            --table-header-text: #111827;   /* Texto escuro para cabeçalho claro */
+            --table-row-even-bg: #1f2937;   /* Fundo da linha par da tabela */
+            --border-color: #4b5563;        /* Cor da borda */
+        }
+    }
+
+    /* 
+    ================================================================
+    APLICAÇÃO DAS VARIÁVEIS AOS ELEMENTOS
+    ================================================================
+    */
+    body, .stApp {
+        font-family: var(--font-family);
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    h1, h2, h3, .stMarkdown {
+        color: var(--text-color);
+    }
+
+    [data-testid="stSidebar"] {
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
+    }
+    
+    .stRadio > label, .stSelectbox > label {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .highlight-box {
+        background-color: var(--highlight-bg);
+        border-left: 5px solid var(--primary-color);
+        padding: 25px;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+    .highlight-box h3 {
+        color: var(--primary-color);
+    }
+
+    .stMarkdown table {
+        border-collapse: collapse;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .stMarkdown th {
+        background-color: var(--table-header-bg);
+        color: var(--table-header-text);
+        text-align: left;
+        padding: 12px 15px;
+    }
+    .stMarkdown td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .stMarkdown tr:nth-of-type(even) {
+        background-color: var(--table-row-even-bg);
+    }
+    .stMarkdown tr:last-of-type td {
+        border-bottom: none;
+    }
+    
+    a {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .footer {
+        text-align: center;
+        padding: 20px;
+        margin-top: 40px;
+        color: #9ca3af; /* Cinza mais suave para o rodapé */
+        border-top: 1px solid var(--border-color);
+    }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- 3. CARREGAMENTO DOS DADOS ---
 @st.cache_data
@@ -73,8 +164,6 @@ if not st.session_state.show_main_page:
     st.stop()
 
 # --- 5. PÁGINA PRINCIPAL ---
-
-# Barra Lateral com Filtros
 st.sidebar.title("🛠️ Filtros Inteligentes")
 if not df.empty:
     categorias = ['Todas'] + sorted(df['Área de Foco'].unique())
@@ -85,17 +174,14 @@ if not df.empty:
     st.sidebar.markdown("### 🏫 Por Instituição")
     selected_fonte = st.sidebar.selectbox("Selecione a instituição:", fontes, label_visibility="collapsed")
 
-    # Aplicação dos filtros
     df_filtered = df.copy()
     if selected_categoria != 'Todas':
         df_filtered = df_filtered[df_filtered['Área de Foco'] == selected_categoria]
     if selected_fonte != 'Todas':
         df_filtered = df_filtered[df_filtered['Fonte'] == selected_fonte]
 
-    # **AQUI ESTÁ A MUDANÇA: Ordena os resultados em ordem alfabética pelo título**
     df_filtered = df_filtered.sort_values(by='Titulo')
 
-    # Conteúdo Principal
     st.title("🎯 Mapa de Oportunidades Gratuitas")
     st.markdown(f"### {len(df_filtered)} cursos encontrados para você.")
     st.markdown("""
@@ -105,7 +191,6 @@ if not df.empty:
     </div>
     """, unsafe_allow_html=True)
 
-    # Tabela de Resultados
     df_display = df_filtered[['Titulo', 'Área de Foco', 'Fonte', 'Duracao', 'Link']].copy()
     df_display.rename(columns={'Titulo': 'Título do Curso', 'Área de Foco': 'Área Principal', 'Fonte': 'Instituição', 'Duracao': 'Duração'}, inplace=True)
     df_display['Link'] = df_display['Link'].apply(lambda link: f'<a href="{link}" target="_blank">Acessar Curso ➔</a>' if pd.notna(link) else 'N/A')
