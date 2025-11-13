@@ -9,122 +9,93 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. ESTILO RESPONSIVO A TEMA (CLARO E ESCURO) ---
+# --- 2. ESTILO RESPONSIVO A TEMA (CLARO E ESCURO) - VERSÃO CORRIGIDA ---
 st.markdown("""
 <style>
-    /* Importa a fonte do Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap' );
 
-    /* 
-    ================================================================
-    DEFINIÇÃO DAS VARIÁVEIS DE COR (TEMA CLARO COMO PADRÃO)
-    ================================================================
-    */
+    /* ================================================================
+    VARIÁVEIS DE COR (TEMA CLARO COMO PADRÃO)
+    ================================================================ */
     :root {
         --font-family: 'Inter', sans-serif;
-        
-        /* Tema Claro */
-        --primary-color: #4f46e5;       /* Roxo/Índigo vibrante */
-        --text-color: #111827;          /* Cinza bem escuro para texto */
-        --bg-color: #f9fafb;            /* Fundo principal (cinza muito claro) */
-        --sidebar-bg: #ffffff;          /* Fundo da sidebar (branco) */
-        --highlight-bg: #eef2ff;        /* Fundo da caixa de destaque */
-        --table-header-bg: #4f46e5;     /* Fundo do cabeçalho da tabela */
-        --table-header-text: #ffffff;   /* Texto do cabeçalho da tabela */
-        --table-row-even-bg: #f3f4f6;   /* Fundo da linha par da tabela */
-        --border-color: #e5e7eb;        /* Cor da borda */
+        --primary-color: #4f46e5;
+        --text-color: #111827;
+        --text-color-subtle: #6b7280;
+        --bg-color: #f9fafb;
+        --sidebar-bg: #ffffff;
+        --highlight-bg: #eef2ff;
+        --table-header-bg: #4f46e5;
+        --table-header-text: #ffffff;
+        --table-row-even-bg: #f3f4f6;
+        --border-color: #e5e7eb;
+        --button-bg: #4f46e5;
+        --button-text: #ffffff;
     }
 
-    /* 
-    ================================================================
+    /* ================================================================
     SOBRESCRITA DAS VARIÁVEIS PARA O TEMA ESCURO
-    ================================================================
-    */
+    ================================================================ */
     @media (prefers-color-scheme: dark) {
         :root {
-            --primary-color: #818cf8;       /* Roxo/Índigo mais claro para contraste */
-            --text-color: #e5e7eb;          /* Cinza claro para texto */
-            --bg-color: #111827;            /* Fundo principal (cinza-azulado escuro) */
-            --sidebar-bg: #1f2937;          /* Fundo da sidebar (um tom mais claro) */
-            --highlight-bg: #374151;        /* Fundo da caixa de destaque */
-            --table-header-bg: #818cf8;     /* Fundo do cabeçalho da tabela */
-            --table-header-text: #111827;   /* Texto escuro para cabeçalho claro */
-            --table-row-even-bg: #1f2937;   /* Fundo da linha par da tabela */
-            --border-color: #4b5563;        /* Cor da borda */
+            --primary-color: #818cf8;
+            --text-color: #e5e7eb;
+            --text-color-subtle: #9ca3af;
+            --bg-color: #111827;
+            --sidebar-bg: #1f2937;
+            --highlight-bg: #374151;
+            --table-header-bg: #818cf8;
+            --table-header-text: #111827;
+            --table-row-even-bg: #1f2937;
+            --border-color: #4b5563;
+            --button-bg: #818cf8;
+            --button-text: #111827;
         }
     }
 
-    /* 
-    ================================================================
-    APLICAÇÃO DAS VARIÁVEIS AOS ELEMENTOS
-    ================================================================
-    */
+    /* ================================================================
+    APLICAÇÃO DAS VARIÁVEIS (COM NOVAS REGRAS)
+    ================================================================ */
     body, .stApp {
         font-family: var(--font-family);
         background-color: var(--bg-color);
         color: var(--text-color);
     }
+    h1, h2, h3, .stMarkdown { color: var(--text-color); }
+    [data-testid="stSidebar"] { background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); }
+    .highlight-box { background-color: var(--highlight-bg); border-left: 5px solid var(--primary-color); padding: 25px; border-radius: 10px; margin: 20px 0; }
+    .highlight-box h3 { color: var(--primary-color); }
+    a { color: var(--primary-color); font-weight: 600; }
+    .footer { text-align: center; padding: 20px; margin-top: 40px; color: var(--text-color-subtle); border-top: 1px solid var(--border-color); }
 
-    h1, h2, h3, .stMarkdown {
-        color: var(--text-color);
+    /* --- NOVAS REGRAS DE CORREÇÃO --- */
+    /* Botão Principal (Tela de Boas-Vindas e outros) */
+    .stButton > button {
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        border: 1px solid var(--primary-color);
+        border-radius: 0.5rem;
+        font-weight: 600;
     }
-
-    [data-testid="stSidebar"] {
+    /* Filtros na Barra Lateral */
+    [data-testid="stSidebar"] .stMarkdown h3, [data-testid="stSidebar"] .stMarkdown p {
+        color: var(--text-color) !important; /* Força a cor do texto nos títulos dos filtros */
+    }
+    [data-testid="stSidebar"] .stRadio, [data-testid="stSidebar"] .stSelectbox {
+        color: var(--text-color); /* Garante que o texto dentro dos widgets seja legível */
+    }
+    /* Fundo da caixa de seleção */
+    [data-testid="stSelectbox"] > div {
         background-color: var(--sidebar-bg);
-        border-right: 1px solid var(--border-color);
     }
-    
-    .stRadio > label, .stSelectbox > label {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--text-color);
-    }
+    /* --- FIM DAS NOVAS REGRAS --- */
 
-    .highlight-box {
-        background-color: var(--highlight-bg);
-        border-left: 5px solid var(--primary-color);
-        padding: 25px;
-        border-radius: 10px;
-        margin: 20px 0;
-    }
-    .highlight-box h3 {
-        color: var(--primary-color);
-    }
-
-    .stMarkdown table {
-        border-collapse: collapse;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .stMarkdown th {
-        background-color: var(--table-header-bg);
-        color: var(--table-header-text);
-        text-align: left;
-        padding: 12px 15px;
-    }
-    .stMarkdown td {
-        padding: 12px 15px;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .stMarkdown tr:nth-of-type(even) {
-        background-color: var(--table-row-even-bg);
-    }
-    .stMarkdown tr:last-of-type td {
-        border-bottom: none;
-    }
-    
-    a {
-        color: var(--primary-color);
-        font-weight: 600;
-    }
-    
-    .footer {
-        text-align: center;
-        padding: 20px;
-        margin-top: 40px;
-        color: #9ca3af; /* Cinza mais suave para o rodapé */
-        border-top: 1px solid var(--border-color);
-    }
+    /* Tabela */
+    .stMarkdown table { border-collapse: collapse; border-radius: 8px; overflow: hidden; }
+    .stMarkdown th { background-color: var(--table-header-bg); color: var(--table-header-text); text-align: left; padding: 12px 15px; }
+    .stMarkdown td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+    .stMarkdown tr:nth-of-type(even) { background-color: var(--table-row-even-bg); }
+    .stMarkdown tr:last-of-type td { border-bottom: none; }
 </style>
 """, unsafe_allow_html=True)
 
