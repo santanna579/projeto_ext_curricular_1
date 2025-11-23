@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+import io
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -25,12 +27,10 @@ st.markdown("""
         --bg-color: #f9fafb;
         --sidebar-bg: #ffffff;
         --highlight-bg: #eef2ff;
-        --table-header-bg: #4f46e5;
-        --table-header-text: #ffffff;
-        --table-row-even-bg: #f3f4f6;
         --border-color: #e5e7eb;
         --button-bg: #4f46e5;
         --button-text: #ffffff;
+        --card-bg: #ffffff; /* Fundo do card de curso */
     }
 
     /* ================================================================
@@ -44,58 +44,86 @@ st.markdown("""
             --bg-color: #111827;
             --sidebar-bg: #1f2937;
             --highlight-bg: #374151;
-            --table-header-bg: #818cf8;
-            --table-header-text: #111827;
-            --table-row-even-bg: #1f2937;
             --border-color: #4b5563;
             --button-bg: #818cf8;
             --button-text: #111827;
+            --card-bg: #1f2937;
         }
     }
 
     /* ================================================================
-    APLICAÇÃO DAS VARIÁVEIS (COM NOVAS REGRAS)
+    APLICAÇÃO DAS VARIÁVEIS
     ================================================================ */
-    body, .stApp {
-        font-family: var(--font-family);
-        background-color: var(--bg-color);
-        color: var(--text-color);
-    }
+    body, .stApp { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); }
     h1, h2, h3, .stMarkdown { color: var(--text-color); }
     [data-testid="stSidebar"] { background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); }
     .highlight-box { background-color: var(--highlight-bg); border-left: 5px solid var(--primary-color); padding: 25px; border-radius: 10px; margin: 20px 0; }
     .highlight-box h3 { color: var(--primary-color); }
-    a { color: var(--primary-color); font-weight: 600; }
+    a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
     .footer { text-align: center; padding: 20px; margin-top: 40px; color: var(--text-color-subtle); border-top: 1px solid var(--border-color); }
 
-    /* --- NOVAS REGRAS DE CORREÇÃO --- */
-    /* Botão Principal (Tela de Boas-Vindas e outros) */
-    .stButton > button {
+    /* Botão Principal */
+    .stButton > button { background-color: var(--button-bg); color: var(--button-text); border: 1px solid var(--primary-color); border-radius: 0.5rem; font-weight: 600; }
+    
+    /* Filtros na Barra Lateral */
+    [data-testid="stSidebar"] .stMarkdown h3, [data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] label { color: var(--text-color) !important; }
+    [data-testid="stSelectbox"] > div > div { background-color: var(--sidebar-bg); color: var(--text-color); }
+
+
+    /* --- NOVO ESTILO: CARDS DE CURSO (UX MOBILE) --- */
+    .course-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+    }
+    .course-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .course-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--text-color);
+    }
+    .course-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+        font-size: 0.9rem;
+        color: var(--text-color-subtle);
+    }
+    .course-detail-item {
+        display: flex;
+        align-items: center;
+    }
+    .course-detail-icon {
+        margin-right: 5px;
+    }
+    .course-button-container {
+        text-align: right;
+    }
+    .course-button {
+        display: inline-block;
+        padding: 10px 20px;
         background-color: var(--button-bg);
-        color: var(--button-text);
-        border: 1px solid var(--primary-color);
+        color: var(--button-text) !important;
+        text-decoration: none;
         border-radius: 0.5rem;
         font-weight: 600;
+        transition: background-color 0.2s;
     }
-    /* Filtros na Barra Lateral */
-    [data-testid="stSidebar"] .stMarkdown h3, [data-testid="stSidebar"] .stMarkdown p {
-        color: var(--text-color) !important; /* Força a cor do texto nos títulos dos filtros */
+    .course-button:hover {
+        background-color: var(--primary-color);
+        opacity: 0.9;
     }
-    [data-testid="stSidebar"] .stRadio, [data-testid="stSidebar"] .stSelectbox {
-        color: var(--text-color); /* Garante que o texto dentro dos widgets seja legível */
-    }
-    /* Fundo da caixa de seleção */
-    [data-testid="stSelectbox"] > div {
-        background-color: var(--sidebar-bg);
-    }
-    /* --- FIM DAS NOVAS REGRAS --- */
 
-    /* Tabela */
-    .stMarkdown table { border-collapse: collapse; border-radius: 8px; overflow: hidden; }
-    .stMarkdown th { background-color: var(--table-header-bg); color: var(--table-header-text); text-align: left; padding: 12px 15px; }
-    .stMarkdown td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
-    .stMarkdown tr:nth-of-type(even) { background-color: var(--table-row-even-bg); }
-    .stMarkdown tr:last-of-type td { border-bottom: none; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -122,7 +150,7 @@ if "show_main_page" not in st.session_state:
 if not st.session_state.show_main_page:
     welcome_image_url = "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
     
-    col1, col2 = st.columns([1, 1] )
+    col1, col2 = st.columns([1, 1])
     with col1:
         st.image(welcome_image_url, use_column_width=True)
     with col2:
@@ -136,24 +164,44 @@ if not st.session_state.show_main_page:
 
 # --- 5. PÁGINA PRINCIPAL ---
 st.sidebar.title("🛠️ Filtros Inteligentes")
+
+# VARIÁVEIS DE ESTADO PARA OS FILTROS
+if 'selected_categoria' not in st.session_state:
+    st.session_state.selected_categoria = 'Todas'
+if 'selected_fonte' not in st.session_state:
+    st.session_state.selected_fonte = 'Todas'
+
 if not df.empty:
-    categorias = ['Todas'] + sorted(df['Área de Foco'].unique())
-    st.sidebar.markdown("### 🧠 Por Área de Foco")
-    selected_categoria = st.sidebar.radio("Selecione a área de interesse:", categorias, label_visibility="collapsed")
+    # FORMULÁRIO DE FILTROS NA SIDEBAR
+    with st.sidebar.form(key='filters_form'):
+        categorias = ['Todas'] + sorted(df['Área de Foco'].unique())
+        st.markdown("### 🧠 Por Área de Foco")
+        # Usa selectbox para ocupar menos espaço
+        categoria_input = st.selectbox("Selecione a área de interesse:", categorias, index=categorias.index(st.session_state.selected_categoria), label_visibility="collapsed")
 
-    fontes = ['Todas'] + sorted(df['Fonte'].unique())
-    st.sidebar.markdown("### 🏫 Por Instituição")
-    selected_fonte = st.sidebar.selectbox("Selecione a instituição:", fontes, label_visibility="collapsed")
+        fontes = ['Todas'] + sorted(df['Fonte'].unique())
+        st.markdown("### 🏫 Por Instituição")
+        fonte_input = st.selectbox("Selecione a instituição:", fontes, index=fontes.index(st.session_state.selected_fonte), label_visibility="collapsed")
+        
+        st.write("") # Espaçamento
+        # Botão de Aplicar
+        submit_button = st.form_submit_button(label='Aplicar Filtros 🔍')
 
+    # ATUALIZA O ESTADO SE O BOTÃO FOR CLICADO
+    if submit_button:
+        st.session_state.selected_categoria = categoria_input
+        st.session_state.selected_fonte = fonte_input
+
+    # APLICA OS FILTROS COM BASE NO ESTADO
     df_filtered = df.copy()
-    if selected_categoria != 'Todas':
-        df_filtered = df_filtered[df_filtered['Área de Foco'] == selected_categoria]
-    if selected_fonte != 'Todas':
-        df_filtered = df_filtered[df_filtered['Fonte'] == selected_fonte]
+    if st.session_state.selected_categoria != 'Todas':
+        df_filtered = df_filtered[df_filtered['Área de Foco'] == st.session_state.selected_categoria]
+    if st.session_state.selected_fonte != 'Todas':
+        df_filtered = df_filtered[df_filtered['Fonte'] == st.session_state.selected_fonte]
 
     df_filtered = df_filtered.sort_values(by='Titulo')
 
-    st.title("🎯 Mapa de Oportunidades Gratuitas")
+    st.title("🎯 Encontre seu curso on-line e gratuito")
     st.markdown(f"### {len(df_filtered)} cursos encontrados para você.")
     st.markdown("""
     <div class="highlight-box">
@@ -162,11 +210,31 @@ if not df.empty:
     </div>
     """, unsafe_allow_html=True)
 
-    df_display = df_filtered[['Titulo', 'Área de Foco', 'Fonte', 'Duracao', 'Link']].copy()
-    df_display.rename(columns={'Titulo': 'Título do Curso', 'Área de Foco': 'Área Principal', 'Fonte': 'Instituição', 'Duracao': 'Duração'}, inplace=True)
-    df_display['Link'] = df_display['Link'].apply(lambda link: f'<a href="{link}" target="_blank">Acessar Curso ➔</a>' if pd.notna(link) else 'N/A')
-    
-    st.markdown(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
+    # --- EXIBIÇÃO EM CARDS (UX MOBILE OTIMIZADA) ---
+    # Itera sobre cada curso filtrado e cria um card HTML
+    for index, row in df_filtered.iterrows():
+        link = row['Link'] if pd.notna(row['Link']) else '#'
+        card_html = f"""
+        <div class="course-card">
+            <div class="course-title">{row['Titulo']}</div>
+            <div class="course-details">
+                <div class="course-detail-item">
+                    <span class="course-detail-icon">🧠</span> {row['Área de Foco']}
+                </div>
+                <div class="course-detail-item">
+                    <span class="course-detail-icon">🏫</span> {row['Fonte']}
+                </div>
+                <div class="course-detail-item">
+                    <span class="course-detail-icon">⏳</span> {row['Duracao']}
+                </div>
+            </div>
+            <div class="course-button-container">
+                <a href="{link}" target="_blank" class="course-button">Acessar Curso ➔</a>
+            </div>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
+
 else:
     st.warning("Aguardando carregamento dos dados...")
 
